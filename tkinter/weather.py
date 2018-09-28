@@ -1,6 +1,10 @@
 import json
 import requests
 import os
+from shutil import copy2
+
+from datetime import date
+from datetime import datetime, timezone
 
 class Forecast:
 
@@ -8,6 +12,8 @@ class Forecast:
         path = os.path.dirname(os.path.abspath(__file__))
         self.forecast_filename = path + os.path.sep + 'forecast.json'
         self.conditions_filename = path + os.path.sep + 'conditions.json'
+        self.forecast_yesterday_filename = path + os.path.sep + 'forecast_yesterday.json'
+        self.conditions_yesterday_filename = path + os.path.sep + 'conditions_yesterday.json'
 
         self.filename = path + os.path.sep + 'config.json'
         with open(self.filename, 'r') as f:
@@ -16,7 +22,6 @@ class Forecast:
             self.api_key = data['api_key']
             self.state = data['state']
             self.city = data['city']
-
 
     def read_forecast(self):
         forecast_data = None
@@ -45,6 +50,27 @@ class Forecast:
             print("Writing conditions file: %s" % self.conditions_filename)
             json_str = json.dumps(conditions_data, indent=4, sort_keys=True)
             f.write(json_str)
+
+    def copy_to_yesterday(self, today_file_date, today_file, yesterday_file):
+        # only copy to yesterday if today's date and date of
+        # current/today file is if diff.
+
+        # Read date from file: "7:00 PM EDT on September 26, 2018"
+        # chop off time? or just get m/d/y from file?
+        # convert str to date obj
+        # get today date
+        # if now > date_file then copy file
+
+        #today = date.today()
+        today = datetime.now(timezone.utc)
+        if today > today_file_date:
+            print("today {} is greater than forecast {} date".format(today, today_file_date))
+            print("copying {} to {}".format(today_file, yesterday_file))
+            copy2(today_file, yesterday_file)
+            os.rename(today_file, today_file+'.bak')
+        else:
+            print("forecast {} is greater than or equal to today {} date".format(today_file_date, today))
+        
         
     def forecast_api(self):
         r = None
@@ -74,6 +100,19 @@ class Forecast:
             r = json.loads(resp.content.decode())
         return r
 
+    def update(self):
+        f = self.forecast()
+        fdate = f['forecast']['simpleforecast']['forecastday'][0]['date']
+        fdate_obj = datetime.strptime("{}{}{}".format(fdate['month'],fdate['day'], fdate['year']), "%m%d%Y")
+        fdate_obj = fdate_obj.replace(tzinfo=timezone.utc)
+        self.copy_to_yesterday(fdate_obj, self.forecast_filename, self.forecast_yesterday_filename)
+
+        c = self.conditions()
+        cdate = c['current_observation']['observation_time_rfc822']
+        cdate_obj = datetime.strptime(cdate, '%a, %d %b %Y %H:%M:%S %z')
+        self.copy_to_yesterday(cdate_obj, self.conditions_filename, self.conditions_yesterday_filename)
+
+
     def forecast(self):
         d = None
         try:
@@ -97,7 +136,20 @@ class Forecast:
         cur_temp = int(c['current_observation']['temp_f'])
         return cur_temp
 
+    def get_yesterday_temp(self):
+        #c = self.conditions()
+        # cur_temp = int(c['current_observation']['temp_f'])
+        # return cur_temp
+        pass
+    
     def get_current_conditions(self):
         f = self.forecast()
         cond = f['forecast']['simpleforecast']['forecastday'][0]['conditions']
         return cond
+
+    def get_tomorrow_conditions(self):
+        pass
+
+    def get_yesterday_conditions(self):
+        # useful?
+        pass

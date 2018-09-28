@@ -7,12 +7,14 @@ import requests
 import os
 import pdb
 import schedule
+import weather
 
 class Root(tk.Tk):
     def __init__(self):
         super().__init__()
 
         self.schedule = schedule.Schedule()
+        self.weather = weather.Forecast()
 
         self.width = 800
         self.height = 400
@@ -76,7 +78,8 @@ class Root(tk.Tk):
 
     def create_weather(self, frame, weather):
         weather_text = tk.Text(frame, bg="gray", height=2, highlightthickness=0)
-        weather_text.insert(tk.INSERT, "Cloudy")
+        txt = self.weather.get_current_conditions()
+        weather_text.insert(tk.INSERT, txt)
         weather_text.pack(side=tk.TOP, fill=tk.X)
         weather = weather_text
         
@@ -147,82 +150,9 @@ class Root(tk.Tk):
         thermometer.create_text(w/2,th-10, text=text, tags=name)
         
     def update(self):
-        d = None
-        try:
-            d = self.read_forecast()
-        except:
-            d = self.forecast_api()
-            self.write_forecast(d)
-
-        c = None
-        try:
-            c = self.read_conditions()
-        except:
-            c = self.conditions_api()
-            self.write_conditions(c)
-
-        #pdb.set_trace()
-        
-        cur_temp = int(c['current_observation']['temp_f'])
-        print("current_temp: %s" % cur_temp)
-
+        cur_temp = self.weather.get_current_temp()
         self.draw_temp_bar(cur_temp, self.l_thermometer, 100, self.height, "current_temp_bar")
-
-    def read_forecast(self):
-        forecast_data = None
-        print("Reading forecast file: %s" % self.forecast_filename)
-        with open(self.forecast_filename, 'r') as f:
-            forecast_data = json.load(f)
-            
-        return forecast_data
-
-    def write_forecast(self, forecast_data):
-        with open(self.forecast_filename, 'w') as f:
-            print("Writing forecast file: %s" % self.forecast_filename)
-            json_str = json.dumps(forecast_data, indent=4, sort_keys=True)
-            f.write(json_str)
-        
-    def read_conditions(self):
-        conditions_data = None
-        print("Reading conditions file: %s" % self.conditions_filename)
-        with open(self.conditions_filename, 'r') as f:
-            conditions_data = json.load(f)
-            
-        return conditions_data
-
-    def write_conditions(self, conditions_data):
-        with open(self.conditions_filename, 'w') as f:
-            print("Writing conditions file: %s" % self.conditions_filename)
-            json_str = json.dumps(conditions_data, indent=4, sort_keys=True)
-            f.write(json_str)
-        
-    def forecast_api(self):
-        r = None
-        try:
-            resp = requests.post(
-                'http://api.wunderground.com/api/{}/forecast/q/{}/{}.json'\
-                .format(self.api_key, self.state, self.city))
-        except (requests.ConnectTimeout, requests.HTTPError,
-                requests.ReadTimeout, requests.Timeout,
-                requests.ConnectionError) as ex:
-            print("Exception in forcast_api", ex)
-        else:
-            r = json.loads(resp.content.decode())
-        return r
-
-    def conditions_api(self):
-        r = None
-        try:
-            resp = requests.post(
-                'http://api.wunderground.com/api/{}/conditions/q/{}/{}.json'\
-                .format(self.api_key, self.state, self.city))
-        except (requests.ConnectTimeout, requests.HTTPError,
-                requests.ReadTimeout, requests.Timeout,
-                requests.ConnectionError) as ex:
-            print("Exception in conditions_api", ex)
-        else:
-            r = json.loads(resp.content.decode())
-        return r
+        #self.weather.update()
 
 if __name__ == "__main__":
     root = Root()
