@@ -8,6 +8,7 @@ import os
 import pdb
 import schedule
 import weather
+import thermometer
 
 class Root(tk.Tk):
     def __init__(self):
@@ -23,11 +24,12 @@ class Root(tk.Tk):
         self.geometry("{}x{}".format(self.width,self.height))
 
 
-        self.l_thermometer_frame = tk.Frame(self)
-        self.l_thermometer = self.create_thermometer(self.l_thermometer_frame, 100, self.height)
+        # self.l_thermometer_frame = tk.Frame(self)
+        # self.l_thermometer = self.create_thermometer(self.l_thermometer_frame, 100, self.height)
 
-        self.r_thermometer_frame = tk.Frame(self)
-        self.r_thermometer = self.create_thermometer(self.r_thermometer_frame, 100, self.height)
+        # self.r_thermometer_frame = tk.Frame(self)
+        # self.r_thermometer = self.create_thermometer(self.r_thermometer_frame, 100, self.height)
+        self.l_thermometer = thermometer.Thermometer(self, 100, self.height, 'current_temp')
 
         self.date_frame = tk.Frame(self)
         self.create_date(self.date_frame)
@@ -43,8 +45,9 @@ class Root(tk.Tk):
         self.kid_frame_2 = tk.Frame(self)
         self.create_kid(self.kid_frame_2, self.kids, "Cora", "pink")
 
-        self.l_thermometer_frame.pack(side=tk.LEFT, fill=tk.Y)
-        self.r_thermometer_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        self.l_thermometer.frame.pack(side=tk.LEFT, fill=tk.Y)
+        
+        #self.r_thermometer_frame.pack(side=tk.RIGHT, fill=tk.Y)
         self.date_frame.pack(side=tk.TOP, fill=tk.X)
         self.weather_frame.pack(side=tk.TOP, fill=tk.X)
         self.kid_frame_1.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
@@ -65,23 +68,35 @@ class Root(tk.Tk):
             self.state = data['state']
             self.city = data['city']
 
+        self.update()
+
     def create_date(self, frame):
         date_str = self.schedule.get_date_str()
         day_str = self.schedule.get_day_str()
 
-        date_widget = tk.Label(frame, text=date_str, bg="gray")
+        txt = "Today is " + day_str + " " + date_str
+
+        date_widget = tk.Label(frame, text=txt, bg="gray")
         date_widget.pack(side=tk.TOP, fill=tk.X)
+
+        # date_widget = tk.Label(frame, text=date_str, bg="gray")
+        # date_widget.pack(side=tk.TOP, fill=tk.X)
         
-        day_widget = tk.Label(frame, text=day_str, bg="gray")
-        day_widget.pack(side=tk.TOP, fill=tk.X)
+        # day_widget = tk.Label(frame, text=day_str, bg="gray")
+        # day_widget.pack(side=tk.TOP, fill=tk.X)
         
 
     def create_weather(self, frame, weather):
-        weather_text = tk.Text(frame, bg="gray", height=2, highlightthickness=0)
         txt = self.weather.get_current_conditions()
-        weather_text.insert(tk.INSERT, txt)
-        weather_text.pack(side=tk.TOP, fill=tk.X)
-        weather = weather_text
+        txt = "Today will be: " + txt
+        
+        # weather_widget = tk.Text(frame, bg="gray", height=2, highlightthickness=0)
+        # weather_widget.insert(tk.INSERT, txt)
+
+        weather_widget = tk.Label(frame, text=txt, bg="gray")
+        
+        weather_widget.pack(side=tk.TOP, fill=tk.X)
+        weather = weather_widget
         
     def create_kid(self, frame, kids, kid_name, color):
         name_font_size = 34
@@ -97,61 +112,10 @@ class Root(tk.Tk):
         kid_activity_widget = tk.Label(frame, text=activity, bg=color, font=("Courier", act_font_size))
         kid_activity_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-
-    def old_create_kid(self, frame, kids, kid_name, color):
-        kid_name_widget = tk.Label(frame, text=kid_name, bg=color)
-        kid_name_widget.pack(side=tk.TOP, fill=tk.X)
-
-        kid_activity_widget = tk.Text(frame, bg=color, height=5, highlightthickness=0)
-        school = self.schedule.get_weekly_school(kid_name)
-        act = self.schedule.get_weekly_activity(kid_name)
-        print(school, act)
-        kid_activity_widget.insert(tk.INSERT, school + "\n")
-        kid_activity_widget.insert(tk.INSERT, act)
-        #kid_activity_widget.insert(tk.INSERT, "Gym")
-        kid_activity_widget.pack(side=tk.TOP, fill=tk.X)
-        kids[kid_name] = kid_activity_widget
-
-    def create_thermometer(self, frame, w, h):
-        t = tk.Canvas(frame, width=w, height=h, highlightthickness=0)
-        t.pack(side=tk.TOP)
-
-        temp_colors = {
-            100 : "red",
-            90 : "red",
-            80 : "orange",
-            70 : "orange",
-            60 : "yellow",
-            50 : "yellow",
-            40 : "green",
-            30 : "green",
-            20 : "cyan",
-            10 : "cyan",
-
-        }
-
-        rw = w
-        rh = h/len(temp_colors)
-        for i in range(0, len(temp_colors)):
-            temp = 100-(i*10)
-            t.create_rectangle(0,i*rh,rw,(i*rh)+rh,fill=temp_colors[temp])
-            t.create_text(10, i*rh-7, text=str(temp))
-
-        self.draw_temp_bar(10, t, w, h, "current_temp_bar")
-
-        return t
-
-    def draw_temp_bar(self, temp, thermometer, w, h, name):
-        # scale temp to graphic range: 0-100 -> 0-h  temp/100*h 
-        th = (100-temp)/100*h
-        text = str(temp) + ""
-        thermometer.delete(name)
-        thermometer.create_rectangle(w/2,th,w/2+5,h,fill="black", tags=name)
-        thermometer.create_text(w/2,th-10, text=text, tags=name)
-        
     def update(self):
         cur_temp = self.weather.get_current_temp()
-        self.draw_temp_bar(cur_temp, self.l_thermometer, 100, self.height, "current_temp_bar")
+        #self.draw_temp_bar(cur_temp, self.l_thermometer, 100, self.height, "current_temp_bar")
+        self.l_thermometer.update(cur_temp, cur_temp)
         #self.weather.update()
 
 if __name__ == "__main__":

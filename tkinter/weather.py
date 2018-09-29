@@ -140,7 +140,7 @@ class Forecast:
         #c = self.conditions()
         # cur_temp = int(c['current_observation']['temp_f'])
         # return cur_temp
-        pass
+        self.get_current_temp() - 10
     
     def get_current_conditions(self):
         f = self.forecast()
