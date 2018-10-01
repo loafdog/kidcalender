@@ -1,3 +1,4 @@
+import pdb
 import json
 import requests
 import os
@@ -50,6 +51,18 @@ class Forecast:
             print("Writing conditions file: %s" % self.conditions_filename)
             json_str = json.dumps(conditions_data, indent=4, sort_keys=True)
             f.write(json_str)
+
+    def read_yesterday_conditions(self):
+        conditions_data = None
+        print("Reading conditions file: %s" % self.conditions_yesterday_filename)
+        try:
+            with open(self.conditions_yesterday_filename, 'r') as f:
+                conditions_data = json.load(f)
+        except FileNotFoundError:
+            return None
+
+        return conditions_data
+
 
     def copy_to_yesterday(self, today_file_date, today_file, yesterday_file):
         # only copy to yesterday if today's date and date of
@@ -130,18 +143,33 @@ class Forecast:
             c = self.conditions_api()
             self.write_conditions(c)
         return c
-    
+
+    def yesterday_conditions(self):
+        c = None
+        try:
+            c = self.read_yesterday_conditions()
+        except RuntimeError as ex:
+            print("Failed to read yesterday condtions: {}".format(ex))
+            c = None
+        return c
+
     def get_current_temp(self):
         c = self.conditions()
         cur_temp = int(c['current_observation']['temp_f'])
         return cur_temp
 
+    def get_high_temp(self):
+        f = self.forecast()
+        temp = f['forecast']['simpleforecast']['forecastday'][0]['high']['fahrenheit']
+        return int(temp)
+
     def get_yesterday_temp(self):
-        #c = self.conditions()
-        # cur_temp = int(c['current_observation']['temp_f'])
-        # return cur_temp
-        self.get_current_temp() - 10
-    
+        c = self.yesterday_conditions()
+        if c == None:
+            return None
+        temp = int(c['current_observation']['temp_f'])
+        return temp
+        
     def get_current_conditions(self):
         f = self.forecast()
         cond = f['forecast']['simpleforecast']['forecastday'][0]['conditions']

@@ -87,6 +87,21 @@ class Root(tk.Tk):
         
 
     def create_weather(self, frame, weather):
+        cur_temp = self.weather.get_current_temp()
+        yesterday_temp = self.weather.get_yesterday_temp()
+
+        if yesterday_temp == None:
+            feel = ""
+        elif cur_temp > yesterday_temp+5:
+            feel = "Today will be warmer than yesterday"
+        elif cur_temp < yesterday_temp-5:
+            feel = "Today will be colder than yesterday"
+        else:
+            feel = "Today will be same as yesterday"
+
+        feel_widget = tk.Label(frame, text=feel, bg="gray")
+        feel_widget.pack(side=tk.TOP, fill=tk.X)
+            
         txt = self.weather.get_current_conditions()
         txt = "Today will be: " + txt
         
@@ -114,8 +129,8 @@ class Root(tk.Tk):
 
     def update(self):
         cur_temp = self.weather.get_current_temp()
-        #self.draw_temp_bar(cur_temp, self.l_thermometer, 100, self.height, "current_temp_bar")
-        self.l_thermometer.update(cur_temp, cur_temp)
+        high_temp = self.weather.get_high_temp()
+        self.l_thermometer.update(cur_temp, high_temp)
         #self.weather.update()
 
 if __name__ == "__main__":
