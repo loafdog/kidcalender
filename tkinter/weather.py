@@ -4,8 +4,9 @@ import requests
 import os
 from shutil import copy2
 
-from datetime import date
-from datetime import datetime, timezone
+import datetime as dt
+# from dt import date
+# from dt import dt, timezone, timedelta
 
 class Forecast:
 
@@ -13,7 +14,7 @@ class Forecast:
         path = os.path.dirname(os.path.abspath(__file__))
         self.forecast_filename = path + os.path.sep + 'forecast.json'
         self.conditions_filename = path + os.path.sep + 'conditions.json'
-        self.forecast_yesterday_filename = path + os.path.sep + 'forecast_yesterday.json'
+        self.yesterday_forecast_filename = path + os.path.sep + 'yesterday_forecast.json'
         self.conditions_yesterday_filename = path + os.path.sep + 'conditions_yesterday.json'
 
         self.filename = path + os.path.sep + 'config.json'
@@ -26,9 +27,21 @@ class Forecast:
 
     def read_forecast(self):
         forecast_data = None
-        print("Reading forecast file: %s" % self.forecast_filename)
+        #print("Reading forecast file: %s" % self.forecast_filename)
         with open(self.forecast_filename, 'r') as f:
             forecast_data = json.load(f)
+            
+        return forecast_data
+
+    def read_yesterday_forecast(self):
+        forecast_data = None
+        #print("Reading yesterday forecast file: %s" % self.yesterday_forecast_filename)
+        try:
+            with open(self.yesterday_forecast_filename, 'r') as f:
+                forecast_data = json.load(f)
+        except FileNotFoundError as ex:
+            print("yesterday file not found: {}".format(ex))
+            return None
             
         return forecast_data
 
@@ -40,7 +53,7 @@ class Forecast:
 
     def read_conditions(self):
         conditions_data = None
-        print("Reading conditions file: %s" % self.conditions_filename)
+        #print("Reading conditions file: %s" % self.conditions_filename)
         with open(self.conditions_filename, 'r') as f:
             conditions_data = json.load(f)
             
@@ -54,36 +67,41 @@ class Forecast:
 
     def read_yesterday_conditions(self):
         conditions_data = None
-        print("Reading conditions file: %s" % self.conditions_yesterday_filename)
+        #print("Reading yesterday conditions file: %s" % self.conditions_yesterday_filename)
         try:
             with open(self.conditions_yesterday_filename, 'r') as f:
                 conditions_data = json.load(f)
-        except FileNotFoundError:
+        except FileNotFoundError as ex:
+            print("yesterday file not found: {}".format(ex))
             return None
 
         return conditions_data
 
 
-    def copy_to_yesterday(self, today_file_date, today_file, yesterday_file):
+    def copy_forecast_to_yesterday(self):
         # only copy to yesterday if today's date and date of
-        # current/today file is if diff.
+        # current/today file is diff. Looks like forecast gets updated
+        # once per day at 7pm?  Any case, at midnight it will change
+        # date to next day.
 
-        # Read date from file: "7:00 PM EDT on September 26, 2018"
-        # chop off time? or just get m/d/y from file?
-        # convert str to date obj
+        # Read parts of date from file and build datetime obj
+        # Get date from datetime
         # get today date
-        # if now > date_file then copy file
+        # if now_date > file_date then copy file
 
-        #today = date.today()
-        today = datetime.now(timezone.utc)
-        if today > today_file_date:
-            print("today {} is greater than forecast {} date".format(today, today_file_date))
-            print("copying {} to {}".format(today_file, yesterday_file))
-            copy2(today_file, yesterday_file)
-            os.rename(today_file, today_file+'.bak')
+        f = self.forecast()
+        fdate = f['forecast']['simpleforecast']['forecastday'][0]['date']
+        dt_obj = dt.datetime.strptime("{}{}{}".format(fdate['month'],fdate['day'], fdate['year']), "%m%d%Y")
+        fdate_obj = dt_obj.date()
+
+        today = dt.datetime.now().date()
+        if today > fdate_obj:
+            print("today {} is greater than forecast {} date".format(today, fdate_obj))
+            print("copying {} to {}".format(self.forecast_filename, self.yesterday_forecast_filename))
+            copy2(self.forecast_filename, self.yesterday_forecast_filename)
         else:
-            print("forecast {} is greater than or equal to today {} date".format(today_file_date, today))
-        
+            print("forecast {} is greater than or equal to today {} date".format(fdate_obj, today))
+            print("skip copying {} to {}".format(self.forecast_filename, self.yesterday_forecast_filename))
         
     def forecast_api(self):
         r = None
@@ -114,32 +132,49 @@ class Forecast:
         return r
 
     def update(self):
-        f = self.forecast()
-        fdate = f['forecast']['simpleforecast']['forecastday'][0]['date']
-        fdate_obj = datetime.strptime("{}{}{}".format(fdate['month'],fdate['day'], fdate['year']), "%m%d%Y")
-        fdate_obj = fdate_obj.replace(tzinfo=timezone.utc)
-        self.copy_to_yesterday(fdate_obj, self.forecast_filename, self.forecast_yesterday_filename)
+        self.forecast(update=True)        
+        self.copy_forecast_to_yesterday()
 
-        c = self.conditions()
-        cdate = c['current_observation']['observation_time_rfc822']
-        cdate_obj = datetime.strptime(cdate, '%a, %d %b %Y %H:%M:%S %z')
-        self.copy_to_yesterday(cdate_obj, self.conditions_filename, self.conditions_yesterday_filename)
+        
+        # c = self.conditions()
+        # cdate = c['current_observation']['observation_time_rfc822']
+        # cdate_obj = dt.datetime.strptime(cdate, '%a, %d %b %Y %H:%M:%S %z')
+        # self.copy_to_yesterday(cdate_obj, self.conditions_filename, self.conditions_yesterday_filename)
+        
 
-
-    def forecast(self):
+    def forecast(self, update=False):
         d = None
-        try:
-            d = self.read_forecast()
-        except:
+        if update == True:
+            print("Update forecast, make api call")
             d = self.forecast_api()
             self.write_forecast(d)
+        else:
+            try:
+                d = self.read_forecast()
+            except:
+                print("Failed to read forecast, make api call")
+                d = self.forecast_api()
+                self.write_forecast(d)
         return d
-    
+
+    def yesterday_forecast(self):
+        d = self.read_yesterday_forecast()
+        return d
+
     def conditions(self):
         c = None
         try:
             c = self.read_conditions()
-        except:
+            # cdate = c['current_observation']['observation_time_rfc822']
+            # cdate_obj = dt.datetime.strptime(cdate, '%a, %d %b %Y %H:%M:%S %z')
+            cdate_obj = dt.datetime.fromtimestamp(os.path.getmtime(self.conditions_filename))
+            #pdb.set_trace()
+            if dt.datetime.now() > cdate_obj + dt.timedelta(hours=1) :
+                print("Calling conditions_api last call {}".format( cdate_obj))
+                c = self.conditions_api()
+                self.write_conditions(c)
+        except Exception as ex:
+            print(ex)
             c = self.conditions_api()
             self.write_conditions(c)
         return c
@@ -148,7 +183,8 @@ class Forecast:
         c = None
         try:
             c = self.read_yesterday_conditions()
-        except RuntimeError as ex:
+        #except RuntimeError as ex:
+        except Exception as ex:
             print("Failed to read yesterday condtions: {}".format(ex))
             c = None
         return c
@@ -163,12 +199,21 @@ class Forecast:
         temp = f['forecast']['simpleforecast']['forecastday'][0]['high']['fahrenheit']
         return int(temp)
 
-    def get_yesterday_temp(self):
-        c = self.yesterday_conditions()
-        if c == None:
+    def get_yesterday_high_temp(self):
+        f = self.yesterday_forecast()
+        if f == None:
             return None
-        temp = int(c['current_observation']['temp_f'])
-        return temp
+        temp = f['forecast']['simpleforecast']['forecastday'][0]['high']['fahrenheit']
+        return int(temp)
+
+    
+    # def get_yesterday_temp(self):
+    #     c = self.yesterday_conditions()
+    #     if c == None:
+    #         print("No temp for yesterday")
+    #         return None
+    #     temp = int(c['current_observation']['temp_f'])
+    #     return temp
         
     def get_current_conditions(self):
         f = self.forecast()
