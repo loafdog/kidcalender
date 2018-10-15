@@ -1,3 +1,12 @@
+# TODO
+#
+# - text about temp being warm/cold/same as yesterday doesn't
+#   work. says warmer when it was colder for example.
+#
+# - add ability to check what temp will be tommorrow vs today
+#
+# - automatically update at 5am for today.
+
 import tkinter as tk
 from tkinter import font
 
@@ -20,15 +29,20 @@ class Root(tk.Tk):
         self.weather = weather.Forecast()
 
         self.title("What is the weather today?")
-        
-        # Set this to adjust app window to size of screen you are using
-        self.width = 800
-        self.height = 400
-        self.geometry("{}x{}".format(self.width,self.height))
-        # TODO use this instead of setting hxw. How do you get the
-        # current size of window if it is fullscreen?
+
+        # This will set app to specific size
         #
-        #self.attributes("-fullscreen", True)
+        # Set this to adjust app window to size of screen you are using
+        # self.width = 800
+        # self.height = 400
+        # self.geometry("{}x{}".format(self.width,self.height))
+
+        # This will make app full screen and detect size
+        # 
+        self.attributes("-fullscreen", True)
+        self.width = self.winfo_screenwidth()
+        self.height = self.winfo_screenheight()
+        print("width: %d height: %d" % (self.width, self.height))
         
         self.bind("<Escape>", sys.exit)
         
@@ -56,23 +70,19 @@ class Root(tk.Tk):
         self.kid_frame_2.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
 
-        # helv36 = font.Font(family='Helvetica', size=36, weight='bold')
-        # self.update_button = tk.Button(self, text="UPDATE", command=self.update, font=helv36)
+        helv36 = font.Font(family='Helvetica', size=48, weight='bold')
 
-        self.update_button = tk.Button(self, text="UPDATE", command=self.update)
+        button_height = int(self.height/6)
+        #self.button_frame = tk.Frame(self, height=button_height)
+        self.button_frame = tk.Frame(self)
+        
+        #self.update_button = tk.Button(self.button_frame, text="TODAY", command=self.update)
+        #self.update_button = tk.Button(self.button_frame, text="TODAY", command=self.update, height=200)
+        self.update_button = tk.Button(self, text="TODAY", command=self.update, font=helv36, pady=20)
+        #self.update_button = tk.Button(self.button_frame, text="TODAY", command=self.update, height=button_height, font=helv36)
         self.update_button.pack(side=tk.BOTTOM)
-
+        self.button_frame.pack(side=tk.BOTTOM)
         
-        # self.button_frame = tk.Frame(self, height=100, width=100)
-        # self.button_frame.pack_propagate(0)
-        # self.button_frame.pack(side=tk.BOTTOM)
-        # self.update_button = tk.Button(self.button_frame, text="UPDATE", command=self.update)
-        # self.update_button.pack(side=tk.BOTTOM, fill=tk.BOTH,expand=1)
-        
-        # self.update_button = tk.Button(self, text="UPDATE", command=self.update, height=100)
-        # self.update_button.pack(side=tk.BOTTOM, fill=tk.Y, expand=1)
-
-
         path = os.path.dirname(os.path.abspath(__file__))
         self.forecast_filename = path + os.path.sep + 'forecast.json'
         self.conditions_filename = path + os.path.sep + 'conditions.json'
