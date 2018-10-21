@@ -2,6 +2,7 @@ schedule.json
 config.json
 forecast.json
 conditions.json
+yesterday_forecast.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

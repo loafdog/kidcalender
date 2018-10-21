@@ -21,29 +21,63 @@ import schedule
 import weather
 import thermometer
 
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+#    filename="test.log",
+    level=logging.DEBUG,
+#    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(message)s"
+#    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(funcName)s:%(message)s"
+    format="%(asctime)s:%(lineno)3s:%(funcName)30s: %(message)s"
+    )
+
 class Root(tk.Tk):
     def __init__(self):
         super().__init__()
 
+        # Assume all conf/schedule files are in same dir as app
+        path = os.path.dirname(os.path.abspath(__file__))
+
+        if os.path.isfile(path + os.path.sep + 'config.json'):
+            self.filename = path + os.path.sep + 'config.json'
+        elif os.path.isfile(path + os.path.sep + 'sample_config.json'):
+            self.filename = path + os.path.sep + 'sample_config.json'
+            logging.warn("Running in SAMPLE mode. Found {}".format(self.filename))
+        else:
+            logging.error("Failed to find a config.json or sample_config.json file in {}".format(path))
+            exit(1)
+
+        with open(self.filename, 'r') as f:
+            logging.debug("Reading config file: %s" % self.filename)        
+            self.config = json.load(f)
+            logging.debug("{}".format(self.config))
+            self.api_key = self.config['api_key']
+            self.state = self.config['state']
+            self.city = self.config['city']
+
         self.schedule = schedule.Schedule()
-        self.weather = weather.Forecast()
+        self.weather = weather.Forecast(self.config)
 
-        self.title("What is the weather today?")
+            
 
-        # This will set app to specific size
-        #
-        # Set this to adjust app window to size of screen you are using
-        # self.width = 800
-        # self.height = 400
-        # self.geometry("{}x{}".format(self.width,self.height))
+        self.title(self.config['title'])
 
-        # This will make app full screen and detect size
-        # 
-        self.attributes("-fullscreen", True)
-        self.width = self.winfo_screenwidth()
-        self.height = self.winfo_screenheight()
-        print("width: %d height: %d" % (self.width, self.height))
-        
+        if self.config['full_screen']:
+            # This will make app full screen and detect size
+            # 
+            self.attributes("-fullscreen", True)
+            self.width = self.winfo_screenwidth()
+            self.height = self.winfo_screenheight()
+        else:
+            # This will set app to specific size
+            #
+            self.attributes("-fullscreen", False)
+            self.width = self.config['width']
+            self.height = self.config['height']
+            self.geometry("{}x{}".format(self.width,self.height))
+
+        logging.debug("width: %d height: %d" % (self.width, self.height))
+
         self.bind("<Escape>", sys.exit)
         
         self.l_thermometer = thermometer.Thermometer(self, 100, self.height, 'current_temp')
@@ -55,23 +89,19 @@ class Root(tk.Tk):
         self.weather_frame = tk.Frame(self)
         (self.feel_text, self.weather_text) = self.create_weather(self.weather_frame)
 
-        self.kids = {}
-        self.kid_frame_1 = tk.Frame(self)
-        self.create_kid(self.kid_frame_1, self.kids, "Greta", "purple")
-
-
-        self.kid_frame_2 = tk.Frame(self)
-        self.create_kid(self.kid_frame_2, self.kids, "Cora", "pink")
-       
-
         self.date_frame.pack(side=tk.TOP, fill=tk.X)
         self.weather_frame.pack(side=tk.TOP, fill=tk.X)
-        self.kid_frame_1.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        self.kid_frame_2.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-
+        self.kids = {}
+        for kid in self.schedule.kids():
+            f = tk.Frame(self)
+            self.create_kid(f, self.kids, kid, self.schedule.color(kid))
+            f.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        
         helv36 = font.Font(family='Helvetica', size=48, weight='bold')
 
+        # Custom button size is hard...
+        
         button_height = int(self.height/6)
         #self.button_frame = tk.Frame(self, height=button_height)
         self.button_frame = tk.Frame(self)
@@ -83,18 +113,6 @@ class Root(tk.Tk):
         self.update_button.pack(side=tk.BOTTOM)
         self.button_frame.pack(side=tk.BOTTOM)
         
-        path = os.path.dirname(os.path.abspath(__file__))
-        self.forecast_filename = path + os.path.sep + 'forecast.json'
-        self.conditions_filename = path + os.path.sep + 'conditions.json'
-        
-        self.filename = path + os.path.sep + 'config.json'
-        with open(self.filename, 'r') as f:
-            print("Reading config file: %s" % self.filename)
-            data = json.load(f)
-            self.api_key = data['api_key']
-            self.state = data['state']
-            self.city = data['city']
-
         self.update()
 
     def create_date(self, frame):
@@ -126,15 +144,11 @@ class Root(tk.Tk):
         kid_name_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
         school_var = tk.StringVar()
-        #school = self.schedule.get_weekly_school(kid_name)
-        #kid_school_widget = tk.Label(frame, text=school, bg=color, font=("Courier", act_font_size))
         kid_school_widget = tk.Label(frame, textvariable=school_var, bg=color, font=("Courier", act_font_size))
         kid_school_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         kids[kid_name]['school_text'] = school_var
 
         act_var = tk.StringVar()
-        #activity = self.schedule.get_weekly_activity(kid_name)
-        #kid_activity_widget = tk.Label(frame, text=activity, bg=color, font=("Courier", act_font_size))
         kid_activity_widget = tk.Label(frame, textvariable=act_var, bg=color, font=("Courier", act_font_size))
         kid_activity_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         kids[kid_name]['act_text'] = act_var
@@ -145,12 +159,13 @@ class Root(tk.Tk):
 
         if yesterday_temp == None:
             feel = "Yesterday high not available"
-        elif cur_temp > yesterday_temp+5:
+        elif cur_temp > yesterday_temp+3:
             feel = "Today temperature will be warmer than yesterday"
-        elif cur_temp < yesterday_temp-5:
+        elif cur_temp < yesterday_temp-3:
             feel = "Today termperature will be colder than yesterday"
         else:
             feel = "Today temperature will be same as yesterday"
+            
         self.feel_text.set(feel)
 
     def update_weather(self):

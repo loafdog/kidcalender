@@ -1,0 +1,71 @@
+{
+    "larry": {
+        "color": "Chartreuse",
+        "weekly" : {
+            "school": {
+                "monday":"nyuk",
+                "tuesday":"nyuk",
+                "wednesday":"nyuk",
+                "thursday":"nyuk",
+                "friday":"nyuk",
+                "saturday":"nyuk",
+                "sunday":"nyuk"
+            },
+            "activity": {
+                "monday":"mon",
+                "tuesday":"tues",
+                "wednesday":"wed",
+                "thursday":"thurs",
+                "friday":"fri",
+                "saturday":"",
+                "sunday":""
+            }
+        }
+    },
+    "moe": {
+        "color": "gold",
+        "weekly" : {
+            "school": {
+                "monday":"nyuk",
+                "tuesday":"nyuk",
+                "wednesday":"nyuk",
+                "thursday":"nyuk",
+                "friday":"nyuk",
+                "saturday":"nyuk",
+                "sunday":"nyuk"
+            },
+            "activity": {
+                "monday":"mon",
+                "tuesday":"tues",
+                "wednesday":"wed",
+                "thursday":"thurs",
+                "friday":"fri",
+                "saturday":"",
+                "sunday":""
+            }
+        }
+    },
+    "curly": {
+        "color": "aquamarine",
+        "weekly" : {
+            "school": {
+                "monday":"nyuk",
+                "tuesday":"nyuk",
+                "wednesday":"nyuk",
+                "thursday":"nyuk",
+                "friday":"nyuk",
+                "saturday":"nyuk",
+                "sunday":"nyuk"
+            },
+            "activity": {
+                "monday":"mon",
+                "tuesday":"tues",
+                "wednesday":"wed",
+                "thursday":"thurs",
+                "friday":"fri",
+                "saturday":"",
+                "sunday":""
+            }
+        }
+    }
+}

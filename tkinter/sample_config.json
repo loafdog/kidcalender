@@ -1,0 +1,9 @@
+{
+    "title": "What is the weather today?",
+    "full_screen": false,
+    "width": 800,
+    "height": 500,
+    "api_key":"NONE",
+    "state":"",
+    "city":""
+}

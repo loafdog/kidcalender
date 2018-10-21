@@ -3,6 +3,9 @@ import json
 from datetime import date
 import calendar
 
+import logging
+logger = logging.getLogger(__name__)
+
 class Schedule:
     """Manage schedule details
     Read in schedule from schedule file.
@@ -31,7 +34,15 @@ class Schedule:
        
     def __init__(self):
         path = os.path.dirname(os.path.abspath(__file__))
-        self.filename = path + os.path.sep + 'schedule.json'
+
+        if os.path.isfile(path + os.path.sep + 'schedule.json'):
+            self.filename = path + os.path.sep + 'schedule.json'
+        elif os.path.isfile(path + os.path.sep + 'sample_schedule.json'):
+            self.filename = path + os.path.sep + 'sample_schedule.json'
+            logging.warn("Running in SAMPLE mode. Found {}".format(self.filename))
+        else:
+            logging.error("Failed to find a schedule.json or sample_schedule.json file in {}".format(path))
+        
         self.schedule_mtime = 0
         self.data = None
         self.read()
@@ -48,9 +59,17 @@ class Schedule:
         """Read data from schedule file
         """
         with open(self.filename, 'r') as f:
-            print("Reading schedule file: %s" % self.filename)
+            logger.debug("Reading schedule file: %s" % self.filename)
             self.data = json.load(f)
             self.schedule_mtime = os.path.getmtime(self.filename)
+
+    def kids(self):
+        k = self.data.keys()
+        logger.debug("kids: %s" % k)
+        return k
+
+    def color(self, kid):
+        return self.data[kid.lower()]['color']
 
     def weekday_str(self):
         today = date.today()
@@ -60,29 +79,29 @@ class Schedule:
         try:
             kid = self.data[kid.lower()]
         except KeyError as key:
-            print(self.data)
-            print("Key '%s' does not exist" % str(key))
+            logging.error(self.data)
+            logging.error("Key '%s' does not exist" % str(key))
             return "No kid {}".format(kid)
 
         try:
             weekly = kid["weekly"]
         except KeyError as key:
-            print(kid)
-            print("Key '%s' does not exist" % str(key))
+            logging.error(kid)
+            logging.error("Key '%s' does not exist" % str(key))
             return "No weekly activities"
 
         try:
             days = weekly[key]
         except KeyError as key:
-            print(weekly)
-            print("Key '%s' does not exist" % str(key))
+            logging.error(weekly)
+            logging.error("Key '%s' does not exist" % str(key))
             return "No weekly {}".format(key)
 
         try:
             act = days[self.weekday_str()]
         except KeyError as key:
-            print(days)
-            print("Key '%s' does not exist" % str(key))
+            logging.error(days)
+            logging.error("Key '%s' does not exist" % str(key))
             return "No {} actvity".format(key)
         
         return act
