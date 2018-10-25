@@ -24,7 +24,7 @@ import thermometer
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    filename="tkinter.log",
+    filename="pyweathercal.log",
     level=logging.DEBUG,
 #    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(message)s"
 #    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(funcName)s:%(message)s"
@@ -42,11 +42,17 @@ class Root(tk.Tk):
             self.filename = path + os.path.sep + 'config.json'
         elif os.path.isfile(path + os.path.sep + 'sample_config.json'):
             self.filename = path + os.path.sep + 'sample_config.json'
-            logging.warn("Running in SAMPLE mode. Found {}".format(self.filename))
+            logging.warning("Running in SAMPLE mode. Found {}".format(self.filename))
         else:
-            logging.error("Failed to find a config.json or sample_config.json file in {}".format(path))
+            logging.critical("Failed to find a config.json or sample_config.json file in {}".format(path))
             exit(1)
 
+        # logging.debug('Test debug')
+        # logging.info('Test info')
+        # logging.warning('Test warning')
+        # logging.error('Test error')
+        # logging.critical('Test critical')
+        
         with open(self.filename, 'r') as f:
             logging.debug("Reading config file: %s" % self.filename)        
             self.config = json.load(f)
@@ -57,8 +63,6 @@ class Root(tk.Tk):
 
         self.schedule = schedule.Schedule()
         self.weather = weather.Forecast(self.config)
-
-            
 
         self.title(self.config['title'])
 
