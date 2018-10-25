@@ -3,7 +3,13 @@
     "full_screen": false,
     "width": 800,
     "height": 500,
-    "api_key":"NONE",
-    "state":"",
-    "city":""
+    "wunderground": {
+        "api_key":"NONE",
+        "state":"",
+        "city":""
+    },
+    "darksky": {
+        "api_key": "NONE",
+        "lat_long": ""
+    }
 }

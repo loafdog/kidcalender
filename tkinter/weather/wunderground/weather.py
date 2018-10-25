@@ -15,9 +15,9 @@ class Forecast:
 
     def __init__(self, config):
         
-        self.api_key = config['api_key']
-        self.state = config['state']
-        self.city = config['city']
+        self.api_key = config['wunderground']['api_key']
+        self.state = config['wunderground']['state']
+        self.city = config['wunderground']['city']
 
         path = os.path.dirname(os.path.abspath(__file__))
         if self.api_key == "NONE":
