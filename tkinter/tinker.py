@@ -24,7 +24,7 @@ import thermometer
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-#    filename="test.log",
+    filename="tkinter.log",
     level=logging.DEBUG,
 #    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(message)s"
 #    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(funcName)s:%(message)s"
