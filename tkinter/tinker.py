@@ -1,8 +1,5 @@
 # TODO
 #
-# - text about temp being warm/cold/same as yesterday doesn't
-#   work. says warmer when it was colder for example.
-#
 # - add ability to check what temp will be tommorrow vs today
 #
 # - automatically update at 5am for today.
@@ -18,7 +15,12 @@ import os
 import sys
 import pdb
 import schedule
-import weather
+
+# TODO: figure out a nicer way to switch between APIs
+#
+from weather.darksky import weather_darksky as weather
+#from weather.wunderground import weather as weather
+
 import thermometer
 
 import logging
@@ -28,7 +30,7 @@ logging.basicConfig(
     level=logging.DEBUG,
 #    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(message)s"
 #    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(funcName)s:%(message)s"
-    format="%(asctime)s:%(lineno)3s:%(funcName)30s: %(message)s"
+    format="%(asctime)s:%(filename)s:%(lineno)3s:%(funcName)30s: %(message)s"
     )
 
 class Root(tk.Tk):
@@ -57,9 +59,6 @@ class Root(tk.Tk):
             logging.debug("Reading config file: %s" % self.filename)        
             self.config = json.load(f)
             logging.debug("{}".format(self.config))
-            self.api_key = self.config['api_key']
-            self.state = self.config['state']
-            self.city = self.config['city']
 
         self.schedule = schedule.Schedule()
         self.weather = weather.Forecast(self.config)
@@ -160,13 +159,13 @@ class Root(tk.Tk):
     def update_feel(self):
         cur_temp = self.weather.get_high_temp()
         yesterday_temp = self.weather.get_yesterday_high_temp()
-
+        logging.debug("high: today {}  yesterday {}".format(cur_temp, yesterday_temp))
         if yesterday_temp == None:
             feel = "Yesterday high not available"
         elif cur_temp > yesterday_temp+3:
             feel = "Today temperature will be warmer than yesterday"
         elif cur_temp < yesterday_temp-3:
-            feel = "Today termperature will be colder than yesterday"
+            feel = "Today temperature will be colder than yesterday"
         else:
             feel = "Today temperature will be same as yesterday"
             
