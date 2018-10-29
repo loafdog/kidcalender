@@ -7,7 +7,7 @@ import datetime as dt
 import logging
 logger = logging.getLogger(__name__)
 
-class Forecast:
+class Forecast():
 
     def __init__(self, config):
         
@@ -22,8 +22,6 @@ class Forecast:
         else:
             self.forecast_filename = path + os.path.sep + 'forecast.json'
             self.yesterday_forecast_filename = path + os.path.sep + 'yesterday_forecast.json'
-
-
         
     def read_forecast(self):
         forecast_data = None
@@ -142,14 +140,6 @@ class Forecast:
         if f == None:
             return 0
         high = f['daily']['data'][1]['temperatureHigh']
-        # for d in f['hourly']['data']:
-        #     print("h {}".format(dt.datetime.utcfromtimestamp(int(d['time'])).strftime('%Y-%m-%d %H:%M:%S')))
-        # for d in f['daily']['data']:
-        #     print("d {}".format(dt.datetime.utcfromtimestamp(int(d['time'])).strftime('%Y-%m-%d %H:%M:%S')))
-        #     print("  {}".format(d['summary']))
-        #     print("  {}".format(d['temperatureHigh']))
-        #     print("  {}".format(d['temperatureMax']))
-            
         return int(high)
 
     def get_yesterday_high_temp(self):
@@ -165,8 +155,42 @@ class Forecast:
         cond = f['daily']['data'][0]['summary']
         return cond
 
+    def _tomorrow_forecast(self):
+        f = self.forecast()
+        if f == None:
+            return None
+
+        now = dt.datetime.now()
+        tomorrow = (now + dt.timedelta(hours=24)).date()
+        
+        fcast = dt.datetime.utcfromtimestamp(f['daily']['data'][1]['time']).date()
+        if fcast > now.date() and fcast <= tomorrow:
+            return f['daily']['data'][1]
+
+        logging.debug("1 now={} tomorrow={} fcast={}".format(now, tommorrow, fcast))
+
+        fcast = dt.datetime.utcfromtimestamp(f['daily']['data'][2]['time']).date()
+        if fcast > now.date() and fcast <= tomorrow:
+            return f['daily']['data'][2]
+
+        logging.debug("2 now={} tomorrow={} fcast={}".format(now, tommorrow, fcast))
+        logging.warning("Failed to find tomorrow forecast block")
+        return None
+    
+    def get_tomorrow_high_temp(self):
+        f = self._tomorrow_forecast()
+        if f == None:
+            return None
+
+        return int(f['temperatureMax'])
+
+    def get_tomorrow_conditions(self):
+        f = self._tomorrow_forecast()
+        if f == None:
+            return None
+
+        return f['summary']
+    
     def update(self):
         self.forecast(update=True)
         self.yesterday_forecast(update=True)
-        # self.forecast(update=False)
-        # self.yesterday_forecast(update=False)

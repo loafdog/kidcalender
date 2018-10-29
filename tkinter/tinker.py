@@ -18,8 +18,9 @@ import schedule
 
 # TODO: figure out a nicer way to switch between APIs
 #
-from weather.darksky import weather_darksky as weather
+#from weather.darksky import weather_darksky as weather
 #from weather.wunderground import weather as weather
+import weather.weather as weather
 
 import thermometer
 
@@ -61,8 +62,9 @@ class Root(tk.Tk):
             logging.debug("{}".format(self.config))
 
         self.schedule = schedule.Schedule()
-        self.weather = weather.Forecast(self.config)
-
+        #self.weather = weather.Forecast(self.config)
+        self.weather = weather.Weather(self.config)
+        
         self.title(self.config['title'])
 
         if self.config['full_screen']:
@@ -100,22 +102,22 @@ class Root(tk.Tk):
             f = tk.Frame(self)
             self.create_kid(f, self.kids, kid, self.schedule.color(kid))
             f.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        
-        helv36 = font.Font(family='Helvetica', size=48, weight='bold')
 
-        # Custom button size is hard...
-        
-        button_height = int(self.height/6)
-        #self.button_frame = tk.Frame(self, height=button_height)
+
+        # Custom button size is hard...            
+        button_font = font.Font(family='Helvetica', size=28, weight='bold')
+
         self.button_frame = tk.Frame(self)
+
+        self.update_button = tk.Button(self.button_frame, text="TODAY", command=self.update, font=button_font, pady=20)
+        self.update_tomorrow_button = tk.Button(self.button_frame, text="TOMORROW", command=self.update_tomorrow, font=button_font, pady=20)
+
+        self.update_tomorrow_button.pack(side=tk.RIGHT)
+        self.update_button.pack(side=tk.RIGHT)
         
-        #self.update_button = tk.Button(self.button_frame, text="TODAY", command=self.update)
-        #self.update_button = tk.Button(self.button_frame, text="TODAY", command=self.update, height=200)
-        self.update_button = tk.Button(self, text="TODAY", command=self.update, font=helv36, pady=20)
-        #self.update_button = tk.Button(self.button_frame, text="TODAY", command=self.update, height=button_height, font=helv36)
-        self.update_button.pack(side=tk.BOTTOM)
         self.button_frame.pack(side=tk.BOTTOM)
-        
+
+        # Auto update when app starts
         self.update()
 
     def create_date(self, frame):
@@ -143,7 +145,7 @@ class Root(tk.Tk):
 
         kids[kid_name] = {}
         
-        kid_name_widget = tk.Label(frame, text=kid_name, bg=color, font=("Courier", name_font_size))
+        kid_name_widget = tk.Label(frame, text=kid_name.capitalize(), bg=color, font=("Courier", name_font_size))
         kid_name_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
         school_var = tk.StringVar()
@@ -156,52 +158,60 @@ class Root(tk.Tk):
         kid_activity_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         kids[kid_name]['act_text'] = act_var
 
-    def update_feel(self):
-        cur_temp = self.weather.get_high_temp()
-        yesterday_temp = self.weather.get_yesterday_high_temp()
-        logging.debug("high: today {}  yesterday {}".format(cur_temp, yesterday_temp))
-        if yesterday_temp == None:
-            feel = "Yesterday high not available"
-        elif cur_temp > yesterday_temp+3:
-            feel = "Today temperature will be warmer than yesterday"
-        elif cur_temp < yesterday_temp-3:
-            feel = "Today temperature will be colder than yesterday"
-        else:
-            feel = "Today temperature will be same as yesterday"
-            
-        self.feel_text.set(feel)
+    def update_feel(self, txt):
+        self.feel_text.set(txt)
 
-    def update_weather(self):
-        txt = self.weather.get_current_conditions()
-        txt = "Today there may be: " + txt
+    def update_weather(self, txt):
         self.weather_text.set(txt)
 
-    def update_date(self):
-        date_str = self.schedule.get_date_str()
-        day_str = self.schedule.get_day_str()
-        txt = "Today is " + day_str + " " + date_str
+    def update_date(self, txt):
         self.date_text.set(txt)
 
-    def update_kid(self):
+    def update_kid(self, tomorrow=False):
         for kid_name, texts in self.kids.items():
-            school = self.schedule.get_weekly_school(kid_name)
-            activity = self.schedule.get_weekly_activity(kid_name)
+            school = self.schedule.get_weekly_school(kid_name, tomorrow)
+            activity = self.schedule.get_weekly_activity(kid_name, tomorrow)
             texts['act_text'].set(activity)
             texts['school_text'].set(school)
             
     def update(self):
-        self.weather.update()
+        #self.weather.update()
 
-        cur_temp = self.weather.get_current_temp()
-        high_temp = self.weather.get_high_temp()
+        cur_temp = self.weather.current_temp()
+        high_temp = self.weather.high_temp()
         self.l_thermometer.update(cur_temp, high_temp)
 
         self.schedule.update()
 
-        self.update_date()
-        self.update_feel()
-        self.update_weather()
+        date_str = self.schedule.get_date_str()
+        day_str = self.schedule.get_day_str()
+        txt = "Today is " + day_str + " " + date_str
+        self.update_date(txt)
+        
+        txt = self.weather.feel()
+        self.update_feel(txt)
+        txt = self.weather.condition()
+        self.update_weather(txt)
         self.update_kid()
+        
+    def update_tomorrow(self):
+        self.weather.update()
+
+        high_temp = self.weather.tomorrow_high_temp()
+        self.l_thermometer.update(None, high_temp)
+
+        self.schedule.update()
+
+        date_str = self.schedule.get_tomorrow_date_str()
+        day_str = self.schedule.get_tomorrow_day_str()
+        txt = "Tomorrow is " + day_str + " " + date_str
+        self.update_date(txt)
+        
+        txt = self.weather.tomorrow_feel()
+        self.update_feel(txt)
+        txt = self.weather.tomorrow_condition()
+        self.update_weather(txt)
+        self.update_kid(tomorrow=True)
 
 if __name__ == "__main__":
     root = Root()
