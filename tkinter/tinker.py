@@ -14,14 +14,9 @@ import requests
 import os
 import sys
 import pdb
+
 import schedule
-
-# TODO: figure out a nicer way to switch between APIs
-#
-#from weather.darksky import weather_darksky as weather
-#from weather.wunderground import weather as weather
 import weather.weather as weather
-
 import thermometer
 
 import logging
@@ -62,7 +57,6 @@ class Root(tk.Tk):
             logging.debug("{}".format(self.config))
 
         self.schedule = schedule.Schedule()
-        #self.weather = weather.Forecast(self.config)
         self.weather = weather.Weather(self.config)
         
         self.title(self.config['title'])
@@ -175,7 +169,7 @@ class Root(tk.Tk):
             texts['school_text'].set(school)
             
     def update(self):
-        #self.weather.update()
+        self.weather.update()
 
         cur_temp = self.weather.current_temp()
         high_temp = self.weather.high_temp()

@@ -17,10 +17,6 @@ class Weather():
             raise 'No weather api keys found in config'
 
 
-    def forecast(self):
-        # return Forecast class?
-        logging.debug("here")
-
     def update(self):
         self.forecast.update()
 
