@@ -53,6 +53,9 @@ class Thermometer():
         return t
 
     def draw_current_temp(self, temp):
+        self.thermometer.delete(self.name)
+        if temp == None:
+            return
         # scale temp to graphic range: 0-100 -> 0-h  temp/100*h
         x1 = self.width/2
         y1 = (100-temp)/100*self.height
@@ -66,11 +69,15 @@ class Thermometer():
         ty = y1 + 10
         
         text = str(temp)
-        self.thermometer.delete(self.name)
+
         self.thermometer.create_rectangle(x1,y1,x2,y2,fill="black", tags=self.name)
         self.thermometer.create_text(tx,ty, text=text, tags=self.name)
 
     def draw_high_temp(self, temp):
+        self.thermometer.delete(self.name + 'h')
+        if temp == None:
+            return
+        
         x1 = self.width/2 + 10
         y1 = (100-temp)/100*self.height + 5
         x2 = self.width
@@ -81,7 +88,7 @@ class Thermometer():
         ty = y1-20
         
         text = "HIGH\n" + str(temp)
-        self.thermometer.delete(self.name + 'h')
+
         self.thermometer.create_rectangle(x1,y1,x2,y2,fill="black", tags=self.name + 'h')
         self.thermometer.create_text(tx,ty, text=text, tags=self.name + 'h')
         
