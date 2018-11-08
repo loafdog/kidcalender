@@ -26,7 +26,7 @@ logging.basicConfig(
     level=logging.DEBUG,
 #    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(message)s"
 #    format="%(asctime)s:%(levelname)s:%(lineno)3s:%(funcName)s:%(message)s"
-    format="%(asctime)s:%(filename)s:%(lineno)3s:%(funcName)30s: %(message)s"
+    format="%(asctime)s:%(filename)s:%(lineno)3s:%(funcName)30s(): %(message)s"
     )
 
 class Root(tk.Tk):

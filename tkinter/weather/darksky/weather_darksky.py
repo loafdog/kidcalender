@@ -25,7 +25,7 @@ class Forecast():
         
     def read_forecast(self):
         forecast_data = None
-        #logging.debug("Reading forecast file: %s" % self.forecast_filename)
+        logging.debug("Reading forecast file: %s" % self.forecast_filename)
         with open(self.forecast_filename, 'r') as f:
             forecast_data = json.load(f)
             
@@ -39,10 +39,10 @@ class Forecast():
             
     def forecast_api(self):
         r = None
+        url = 'https://api.darksky.net/forecast/{}/{}'.format(self.api_key, self.lat_long)
+        logging.debug("URL: {}".format(url))
         try:
-            resp = requests.get(
-                'https://api.darksky.net/forecast/{}/{}'\
-                .format(self.api_key, self.lat_long))
+            resp = requests.get(url)
         except (requests.ConnectTimeout, requests.HTTPError,
                 requests.ReadTimeout, requests.Timeout,
                 requests.ConnectionError) as ex:
@@ -56,7 +56,7 @@ class Forecast():
 
     def read_yesterday_forecast(self):
         forecast_data = None
-        #logging.debug("Reading yesterday forecast file: %s" % self.yesterday_forecast_filename)
+        logging.debug("Reading yesterday forecast file: %s" % self.yesterday_forecast_filename)
         try:
             with open(self.yesterday_forecast_filename, 'r') as f:
                 forecast_data = json.load(f)
@@ -74,12 +74,13 @@ class Forecast():
 
     def yesterday_forecast_api(self):
         r = None
+
+        now = dt.datetime.now()
+        yesterday = now - dt.timedelta(hours=24)
+        url = 'https://api.darksky.net/forecast/{}/{},{}'.format(self.api_key, self.lat_long, int(yesterday.timestamp()))
+        logging.debug("URL: {}".format(url))
         try:
-            now = dt.datetime.now()
-            yesterday = now - dt.timedelta(hours=24)
-            resp = requests.get(
-                'https://api.darksky.net/forecast/{}/{},{}'\
-                .format(self.api_key, self.lat_long, int(yesterday.timestamp())))
+            resp = requests.get(url)
         except (requests.ConnectTimeout, requests.HTTPError,
                 requests.ReadTimeout, requests.Timeout,
                 requests.ConnectionError) as ex:

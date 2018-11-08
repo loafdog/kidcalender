@@ -37,6 +37,7 @@ class Weather():
     def condition(self):
         txt = self.forecast.get_current_conditions()
         txt = "Conditions: " + txt
+        logging.debug("{}".format(txt))
         return txt
 
     def current_temp(self):
@@ -51,6 +52,7 @@ class Weather():
     def tomorrow_condition(self):
         txt = self.forecast.get_tomorrow_conditions()
         txt = "Conditions: " + txt
+        logging.debug("{}".format(txt))
         return txt
 
     def tomorrow_feel(self):
